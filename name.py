@@ -7,6 +7,7 @@
 #
 import sys
 import os
+from stat import S_IRUSR, S_IRGRP, S_IROTH, S_IWUSR, S_IWGRP, S_IWOTH, S_IXUSR, S_IXGRP, S_IXOTH
 import codecs
 from chardet import detect
 
@@ -109,15 +110,15 @@ class fixer(object):
         self.fsencoding = sys.getfilesystemencoding()
         print("file system encoding is %s" % self.fsencoding)
 
-    def fix(self, root, testing=False, verbose=False):
+    def fix(self, root, owner=None, group=None, testing=False, verbose=False):
         cwd = os.getcwd()
         os.chdir(root)
         try:
-            return self._fix(root, testing=testing, verbose=verbose)
+            return self._fix(root, owner=owner, group=group, testing=testing, verbose=verbose)
         finally:
             os.chdir(cwd)
     
-    def _fix(self, root, testing=False, verbose=False):
+    def _fix(self, root, owner=None, group=None, testing=False, verbose=False):
         self.encodings = {}
         self.testing = testing
         self.verbose = verbose
@@ -131,6 +132,24 @@ class fixer(object):
             dirpath, dirnames, filenames = info
             #print("dipath = %s, dirnames = %s, filenames = %s" % (repr(dirpath), repr(dirnames), repr(filenames)))
 
+            # Change owner/group if required
+            for names in (dirnames, filenames):
+                for name in names:
+                    pathname = os.path.join(dirpath, name)
+                    if owner or group:
+                        try:
+                            self._chown(pathname, owner, group)
+                        except Exception as e:
+                            print("failed to change owner/group on %s: %s" % (repr(pathname), e))
+
+            # Set permissions for files and directories
+            for name in dirnames:
+                pathname = os.path.join(dirpath, name)
+                os.chmod(pathname, S_IRUSR|S_IRGRP|S_IROTH|S_IWUSR|S_IWGRP|S_IWOTH|S_IXUSR|S_IXGRP|S_IXOTH) # rwxrwxrwx
+            for name in filenames:
+                pathname = os.path.join(dirpath, name)
+                os.chmod(pathname, S_IRUSR|S_IRGRP|S_IROTH|S_IWUSR|S_IWGRP|S_IWOTH) # rwrwrw
+            
             # Prune directories and files whose names being with a dot
             for names in (dirnames, filenames):
                 for name in list(names):
@@ -234,3 +253,12 @@ class fixer(object):
             (c for c in normalize('NFD', s) 
              if category(c) != 'Mn')
             )
+
+    @staticmethod
+    def _chown(path, owner, group):
+        import pwd
+        import grp
+
+        uid = pwd.getpwnam(owner).pw_uid if owner else -1
+        gid = grp.getgrnam(group).gr_gid if group else -1
+        os.chown(path, uid, gid)

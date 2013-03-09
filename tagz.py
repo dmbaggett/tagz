@@ -23,6 +23,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--just-testing', action='store_true', default=False, dest='testing', help='do not make changes; just display what actions would be taken')
     parser.add_argument('-e', '--encoding', action='store', default='utf8', dest='encoding', help='output encoding for filenames (default: utf8)')
     parser.add_argument('-s', '--strip-diacritics', action='store_true', default='False', dest='stripdiacritics', help='replace characters with accents and other diacritics with plain ASCII variants')
+    parser.add_argument('-g', '--set-group', action='store', default=None, dest='group', help='set group of all files and directories')
+    parser.add_argument('-o', '--set-owner', action='store', default=None, dest='owner', help='set owner of all files and directories')
     parser.add_argument('-v', '--verbose', action='store_true', default=False, dest='verbose', help='be verbose')
     flags = parser.parse_args()
 
@@ -32,5 +34,5 @@ if __name__ == '__main__':
 
     # Make a name fixer and use it to fix pathnames
     namefixer = name.fixer(flags.stripdiacritics, flags.encoding, flags.followlinks)
-    namefixer.fix(root, flags.testing, flags.verbose)
+    namefixer.fix(root, flags.owner, flags.group, flags.testing, flags.verbose)
     namefixer.report()
