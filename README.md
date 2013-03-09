@@ -1,6 +1,10 @@
 tagz
 ====
 
-Clean up music file names and (eventually) ID3 tags. This is my
-work-in-progress Python script to fix my music. You need chardet to
-use it. Tested with Python 2.7.3.
+Music apps like Songbird and Winamp have trouble importing files with
+non-ASCII characters in filenames and with corrupted tags. This script
+attempts to fix such problems with minimal input from the user.
+
+Requirements:
+- Python 2.7 (untested with Python 3.X)
+- chardet
